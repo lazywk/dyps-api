@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  company_name  String
+  github_id     Int        @unique
+  github_login  String
+  github_avatar String
+  github_token  String
+  email         String?
+  created_at    DateTime   @default(now())
+
+  // Relations
+  projects     Project[]
+  deployments  Deployment[]
+}
+
+
+model Project {
+  id          Int        @id @default(autoincrement())
+  domain      String     @unique
+  owner_id    Int
+  created_at  DateTime   @default(now())
+
+  // Relations
+  owner       User       @relation(fields: [owner_id], references: [id])
+  deployments Deployment[]
+}
+
+model Deployment {
+  id         Int      @id @default(autoincrement())
+  status     String
+  project_id Int
+  user_id    Int
+  created_at DateTime @default(now())
+
+  // Relations
+  project   Project  @relation(fields: [project_id], references: [id])
+  user      User     @relation(fields: [user_id], references: [id])
+}
