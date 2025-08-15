@@ -38,3 +38,9 @@ export async function getRepos(req: Request, res: Response) {
 
     res.json(result);
 }
+
+export async function getRepoDetail(req: Request, res: Response) {
+    console.log(req.params.id);
+
+    res.json({ message: "hello" })
+}
