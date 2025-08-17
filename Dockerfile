@@ -9,6 +9,8 @@ RUN npm install --frozen-lockfile
 
 RUN npx prisma generate
 
+RUN npx prisma migrate deploy
+
 COPY . .
 
 RUN npm run build
