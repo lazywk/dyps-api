@@ -2,8 +2,8 @@ import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generato
 import { nanoid } from 'nanoid';
 
 export default function domainGenerate(): string {
-    const namePart = uniqueNamesGenerator({ dictionaries: [adjectives, animals], separator: '-' });
-    const randomPart = nanoid(4);
+    const namePart = uniqueNamesGenerator({ dictionaries: [adjectives, animals], separator: '-', style: "lowerCase" });
+    const randomPart = nanoid(4).toLowerCase()
     const subdomain = `${namePart}-${randomPart}`;
 
     return subdomain

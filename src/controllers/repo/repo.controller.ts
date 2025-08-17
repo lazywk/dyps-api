@@ -1,25 +1,18 @@
 import axios from 'axios';
-import type { Request, Response } from 'express';
+import type { Response, Request } from 'express';
 import type { Repo } from '../../types/repo.js';
-import prisma from '../../lib/prisma.js';
-import { decodeToken } from '../../utils/auth.js';
 
 export async function getRepos(req: Request, res: Response) {
-    const accessToken = req.headers.authorization
-    if (!accessToken) return res.status(401).json({ msg: "Missing token" })
-
     const q = new URLSearchParams({
         visibility: "all",
         sort: "created",
         affiliation: "owner,organization_member",
     }).toString();
 
-    const user = await prisma.user.findUnique({ where: { github_id: decodeToken(accessToken).id } })
-
     const reposRes = await axios.get<Repo[]>(
         `https://api.github.com/user/repos?${q}`,
         {
-            headers: { Authorization: `token ${user?.github_token}` },
+            headers: { Authorization: `token ${req.github_token}` },
         }
     );
 
@@ -40,7 +33,11 @@ export async function getRepos(req: Request, res: Response) {
 }
 
 export async function getRepoDetail(req: Request, res: Response) {
-    console.log(req.params.id);
+    const repo = await axios.get(`https://api.github.com/repositories/${req.params.id}`, {
+        headers: {
+            Authorization: `token ${req.github_token}`
+        }
+    })
 
-    res.json({ message: "hello" })
+    res.json(repo.data)
 }

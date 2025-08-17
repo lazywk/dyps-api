@@ -8,5 +8,5 @@ export function signToken(payload: object) {
 }
 
 export function decodeToken(token: string) {
-    return jwt.decode(token) as { id: number }
+    return jwt.decode(token) as { id: number, iat: number, exp: number }
 }

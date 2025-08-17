@@ -1,12 +1,14 @@
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
+import { detectPackageManager } from "../lib/find-package-manager.js";
+import prisma from "../lib/prisma.js";
 
-export async function deployRepo(repoUrl: string, subdomain: string, accessToken: string) {
+export async function deployRepo(repoUrl: string, subdomain: string, accessToken: string, deploymentId: number) {
     const currentDir = process.cwd(); // Node.js appning joriy working dir
     const repoDir = path.join(currentDir, subdomain);
     // const deployDir = `/var/www/${subdomain}`;
-    const deployDir =path.join(currentDir, subdomain + '-build');
+    const deployDir = path.join(currentDir, subdomain + '-build');
 
     // Helper: run command with live logs
     function runCommand(cmd: string, args: string[], cwd: string) {
@@ -39,15 +41,21 @@ export async function deployRepo(repoUrl: string, subdomain: string, accessToken
             fs.rmSync(repoDir, { recursive: true, force: true });
         }
 
+        await updateDeplyomentStatus(deploymentId, "cloning")
         await runCommand("git", ["clone", cloneUrl, repoDir], currentDir);
 
+        const pkgManager = detectPackageManager(repoDir);
+
         console.log(`📦 Installing dependencies in ${repoDir}...`);
-        await runCommand("pnpm", ["install"], repoDir); // universal install
+        await updateDeplyomentStatus(deploymentId, "installing")
+        await runCommand(pkgManager, ["install"], repoDir); // universal install
 
         console.log("🏗 Building project...");
-        await runCommand("pnpm", ["run", "build"], repoDir);
+        await updateDeplyomentStatus(deploymentId, "building")
+        await runCommand(pkgManager, ["run", "build"], repoDir);
 
         console.log("📂 Deploying build folder...");
+        await updateDeplyomentStatus(deploymentId, "deploying")
         const buildPath = fs.existsSync(path.join(repoDir, "dist"))
             ? path.join(repoDir, "dist")
             : path.join(repoDir, "build");
@@ -64,9 +72,11 @@ export async function deployRepo(repoUrl: string, subdomain: string, accessToken
 
         fs.cpSync(buildPath, deployDir, { recursive: true });
 
+        await updateDeplyomentStatus(deploymentId, "ready")
         console.log(`✅ Deployed to ${deployDir}`);
     } catch (err) {
         console.error("❌ Deploy error:", err);
+        await updateDeplyomentStatus(deploymentId, "failed")
         throw err;
     } finally {
         // Clean up cloned repo
@@ -77,44 +87,6 @@ export async function deployRepo(repoUrl: string, subdomain: string, accessToken
     }
 }
 
-
-// import { execSync } from "child_process";
-// import path from "path";
-// import fs from "fs";
-// import os from "os";
-
-// export async function deployRepo(repoUrl: string, subdomain: string, accessToken: string) {
-//     const tmpDir = path.join(os.tmpdir(), subdomain);
-//     const wwwDir = path.join(process.cwd(), "local-www", subdomain);
-
-//     try {
-//         console.log("📥 Cloning repo...");
-//         const cloneUrl = repoUrl.replace(
-//             "https://github.com/",
-//             `https://x-access-token:${accessToken}@github.com/`
-//         );
-//         execSync(`git clone ${cloneUrl} ${tmpDir}`, { stdio: "inherit" });
-
-//         console.log("📦 Installing dependencies...");
-//         execSync(`npm install`, { cwd: tmpDir, stdio: "inherit" });
-
-//         console.log("🏗 Building project...");
-//         execSync(`npm run build`, { cwd: tmpDir, stdio: "inherit" });
-
-//         console.log("🗑 Clearing old build...");
-//         if (fs.existsSync(wwwDir)) {
-//             fs.rmSync(wwwDir, { recursive: true, force: true });
-//         }
-
-//         console.log("📂 Copying new build...");
-//         const buildPath = path.join(tmpDir, "dist"); // yoki build
-//         fs.mkdirSync(wwwDir, { recursive: true });
-//         fs.cpSync(buildPath, wwwDir, { recursive: true });
-
-//         console.log(`✅ Deployed to ${wwwDir}`);
-//     } catch (err) {
-//         console.error("❌ Deploy error:", err);
-//     } finally {
-//         fs.rmSync(tmpDir, { recursive: true, force: true });
-//     }
-// }
+async function updateDeplyomentStatus(id: number, status: string) {
+    await prisma.deployment.update({ where: { id }, data: { status } })
+}
