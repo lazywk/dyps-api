@@ -6,9 +6,9 @@ services:
     container_name: pg14
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespw
-      POSTGRES_DB: dyps
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -18,10 +18,10 @@ services:
     build: .
     container_name: dyps-api
     restart: always
-    environment:
-      DATABASE_URL: postgresql://postgres:postgrespw@db:5432/dyps
+    env_file:
+      - .env
     ports:
-      - "3000:3000"
+      - "${APP_PORT}:${APP_PORT}"
     depends_on:
       - db
 
