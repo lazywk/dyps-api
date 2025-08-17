@@ -7,6 +7,8 @@ import prisma from "./lib/prisma.js";
 import projectRoutes from "./routes/project.routes.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 
+const port = process.env.PORT!;
+
 const app = express();
 const router = express.Router()
 
@@ -33,6 +35,6 @@ app.get('/users', async (req, res) => {
     res.json(users)
 })
 
-app.listen(3000, () => {
-    console.log('server is running on port 3000');
+app.listen(port ?? 3000, () => {
+    console.log(`server is running on port ${port}`);
 })
