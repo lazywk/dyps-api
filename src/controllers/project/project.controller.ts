@@ -5,6 +5,7 @@ import prisma from '../../lib/prisma.js';
 import { checkAndCreateDomain } from '../../services/domain.service.js';
 import { deployRepo } from '../../services/deploy.service.js';
 import axios from 'axios';
+import fs from "fs";
 
 export async function getProjects(req: Request, res: Response) {
     try {
@@ -120,5 +121,44 @@ export async function handleDeploy(req: Request, res: Response) {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ msg: "Deploy error", error: (err as Error).message });
+    }
+}
+
+
+export async function deleteProject(req: Request, res: Response) {
+    const id = Number(req.params?.id)
+    if (!id) {
+        return res.status(400).json({ message: "Project id not provided" })
+    }
+    try {
+        const project = await prisma.project.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                subdomain: true,
+            },
+        });
+        if (project) {
+            await prisma.deployment.deleteMany({ where: { project_id: project.id } })
+            await prisma.project.delete({ where: { id } })
+
+            const deployDir = `/var/www/${project.subdomain}`;
+
+            if (fs.existsSync(deployDir)) {
+                fs.rmSync(deployDir, { recursive: true, force: true });
+            } else {
+                res.status(400).json("Project not found")
+            }
+
+            res.status(200).json({ id: project.id, message: "success!" })
+        } else {
+            res.status(400).json("Project not found")
+        }
+
+    } catch (err) {
+        return res.status(500).json({
+            msg: "Failed to delete",
+            error: (err as Error).message,
+        });
     }
 }
