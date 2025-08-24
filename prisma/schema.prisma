@@ -26,6 +26,8 @@ model Project {
   id             Int      @id @default(autoincrement())
   domain         String   @unique
   subdomain      String   @unique
+  name           String?
+  repo_name      String?
   github_id      Int      @default(0)
   owner_id       Int
   default_branch String   @default("main")
@@ -38,7 +40,7 @@ model Project {
 
 model Deployment {
   id         Int      @id @default(autoincrement())
-  status     String   
+  status     String
   project_id Int
   user_id    Int
   created_at DateTime @default(now())

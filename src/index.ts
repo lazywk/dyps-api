@@ -7,7 +7,7 @@ import prisma from "./lib/prisma.js";
 import projectRoutes from "./routes/project.routes.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 
-const port = process.env.PORT!;
+const port = process.env.APP_PORT!;
 
 const app = express();
 const router = express.Router()

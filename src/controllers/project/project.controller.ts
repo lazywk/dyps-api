@@ -17,6 +17,8 @@ export async function getProjects(req: Request, res: Response) {
                 subdomain: true,
                 created_at: true,
                 default_branch: true,
+                repo_name: true,
+                name: true,
                 _count: {
                     select: { deployments: true },
                 },
@@ -27,11 +29,13 @@ export async function getProjects(req: Request, res: Response) {
         return res.json(projects.map(p => ({
             ...p,
             _count: undefined,
+            name: undefined,
+            repo_name: undefined,
+            repo: `${req.user.github_login}/${p.repo_name}`,
             deployments: p._count.deployments,
         }))
         );
     } catch (err) {
-        console.error(err);
         return res.status(500).json({
             msg: "Failed to fetch projects",
             error: (err as Error).message,
@@ -41,7 +45,7 @@ export async function getProjects(req: Request, res: Response) {
 
 export async function createProject(req: Request, res: Response) {
     try {
-        const domainData = await checkAndCreateDomain();
+        const domainData = await checkAndCreateDomain(req.body.name);
 
         const repo = await axios.get(`https://api.github.com/repositories/${req.body.repo}`, {
             headers: {
@@ -54,7 +58,9 @@ export async function createProject(req: Request, res: Response) {
                 domain: domainData.domain,
                 subdomain: domainData.subdomain,
                 owner_id: req.user.id,
-                github_id: repo.data.id
+                github_id: repo.data.id,
+                name: req.body.name,
+                repo_name: repo.data.name
             },
         });
 
@@ -91,7 +97,8 @@ export async function getProjectDetail(req: Request, res: Response) {
                 subdomain: true,
                 created_at: true,
                 default_branch: true,
-                deployments: true
+                deployments: true,
+                name: true,
             },
         });
 
@@ -119,7 +126,6 @@ export async function handleDeploy(req: Request, res: Response) {
 
         return res.json({ msg: "✅ Deploy started" });
     } catch (err) {
-        console.error(err);
         return res.status(500).json({ msg: "Deploy error", error: (err as Error).message });
     }
 }
@@ -146,8 +152,6 @@ export async function deleteProject(req: Request, res: Response) {
 
             if (fs.existsSync(deployDir)) {
                 fs.rmSync(deployDir, { recursive: true, force: true });
-            } else {
-                res.status(400).json("Project not found")
             }
 
             res.status(200).json({ id: project.id, message: "success!" })
