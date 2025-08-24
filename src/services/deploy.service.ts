@@ -7,8 +7,8 @@ import prisma from "../lib/prisma.js";
 export async function deployRepo(repoUrl: string, subdomain: string, accessToken: string, deploymentId: number) {
     const currentDir = process.cwd(); // Node.js appning joriy working dir
     const repoDir = path.join(currentDir, subdomain);
-    // const deployDir = `/var/www/${subdomain}`;
-    const deployDir = path.join(currentDir, subdomain + '-build');
+    const deployDir = `/var/www/${subdomain}`;
+    // const deployDir = path.join(currentDir, subdomain + '-build');
 
     // Helper: run command with live logs
     function runCommand(cmd: string, args: string[], cwd: string) {
