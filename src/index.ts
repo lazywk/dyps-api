@@ -17,7 +17,7 @@ dotenv.config();
 app.use(express.json());
 
 app.use(cors({
-    origin: ['http://localhost:3002', 'https://reactgo.uz']
+    origin: ['http://localhost:3002', 'https://dyps.uz']
 }))
 
 // app.use('/api/v1', router)

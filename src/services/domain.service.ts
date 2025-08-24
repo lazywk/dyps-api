@@ -18,6 +18,6 @@ export async function checkAndCreateDomain(defaultName?: string, retry = 0): Pro
     }
     return {
         subdomain,
-        domain: `${subdomain}.example.com`,
+        domain: `${subdomain}.dyps.uz`,
     }
 }
